@@ -1,0 +1,54 @@
+[gd_scene load_steps=2 format=3 uid="uid://d1idf8pvmenph"]
+
+[ext_resource type="Script" path="res://scripts/speaker_list_editor.gd" id="1_81dcw"]
+
+[node name="SpeakerListEditor" type="Window"]
+title = "Speaker List"
+position = Vector2i(0, 36)
+size = Vector2i(600, 450)
+min_size = Vector2i(600, 450)
+script = ExtResource("1_81dcw")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SpeakerList" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+
+[node name="AddSpeakerButton" type="Button" parent="VBoxContainer/ScrollContainer/SpeakerList"]
+layout_mode = 2
+tooltip_text = "Add new speaker"
+theme_override_font_sizes/font_size = 24
+text = "+"
+
+[node name="CloseButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
+text = "Close"
+
+[node name="IconSelectFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Open a File"
+size = Vector2i(600, 450)
+min_size = Vector2i(600, 450)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.png ; Png", "*.jpg ; Jpeg", "*.gif ; Gif", "*.svg ; Svg")
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="pressed" from="VBoxContainer/ScrollContainer/SpeakerList/AddSpeakerButton" to="." method="_on_add_speaker_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/CloseButton" to="." method="_on_close_requested"]

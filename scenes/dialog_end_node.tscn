@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3 uid="uid://blww128lovocm"]
+
+[ext_resource type="Script" path="res://scripts/dialog_end_node.gd" id="1_shiy2"]
+[ext_resource type="Texture2D" uid="uid://c8txf7if8opj6" path="res://textures/end.svg" id="2_0pqk6"]
+
+[node name="DialogEndNode" type="GraphNode"]
+offset_right = 340.0
+offset_bottom = 95.0
+title = "Dialog End"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 0.164706, 0.164706, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = false
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+script = ExtResource("1_shiy2")
+node_icon = ExtResource("2_0pqk6")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.329412, 0.329412, 0.329412, 1)
+theme_override_font_sizes/font_size = 24
+text = "DIALOG END"
+horizontal_alignment = 1
+
+[connection signal="dragged" from="." to="." method="_on_dragged"]

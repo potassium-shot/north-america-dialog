@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="DialogTree" load_steps=7 format=3 uid="uid://dofgglw6e6f46"]
+
+[ext_resource type="Script" path="res://scripts/save/dialog_tree.gd" id="1_jymk3"]
+[ext_resource type="Script" path="res://scripts/save/dialog_speaker.gd" id="3_e6eo0"]
+[ext_resource type="Texture2D" uid="uid://42ock2e5vyiu" path="res://textures/default_character_01.svg" id="4_vql4h"]
+[ext_resource type="Texture2D" uid="uid://dquol1nredyot" path="res://textures/default_character_04.svg" id="5_e24py"]
+
+[sub_resource type="Resource" id="Resource_5jo1b"]
+script = ExtResource("3_e6eo0")
+name = "Luigi"
+thumbnail = ExtResource("5_e24py")
+
+[sub_resource type="Resource" id="Resource_0dybg"]
+script = ExtResource("3_e6eo0")
+name = "Mario"
+thumbnail = ExtResource("4_vql4h")
+
+[resource]
+script = ExtResource("1_jymk3")
+nodes = {}
+speakers = {
+"Luigi": SubResource("Resource_5jo1b"),
+"Mario": SubResource("Resource_0dybg")
+}
+export_path = ""

@@ -1,0 +1,163 @@
+[gd_scene load_steps=3 format=3 uid="uid://cct4povgr65m0"]
+
+[sub_resource type="GDScript" id="GDScript_tji34"]
+resource_name = "MainScript"
+script/source = "extends HBoxContainer
+
+var text: String:
+	get:
+		return %TextEdit.text
+	
+	set(value):
+		%TextEdit.text = value
+		%Label.text = _format_label_text(value)
+
+func _ready():
+	%Label.fit_content = true
+
+func _on_text_edit_focus_exited():
+	%Label.text = _format_label_text(text)
+	%TextEdit.visible = false
+	%LabelContainer.visible = true
+
+func _on_label_gui_input(p_event: InputEvent):
+	var button_event: InputEventMouseButton = p_event as InputEventMouseButton
+	
+	if button_event and button_event.button_index == MOUSE_BUTTON_LEFT and button_event.double_click:
+		%LabelContainer.visible = false
+		%TextEdit.visible = true
+		%TextEdit.grab_focus()
+
+func _format_label_text(p_text: String) -> String:
+	var result = \"\"
+	var cursor: int = 0
+	var old_cursor: int = 0
+	var closing_markup: String
+	
+	while cursor != -1:
+		cursor = _min_of_find(p_text.find(\"<\", cursor), p_text.find(\"[\", cursor))
+		
+		if cursor == -1:
+			result += p_text.substr(old_cursor)
+			break
+		
+		result += p_text.substr(old_cursor, cursor - old_cursor)
+		old_cursor = cursor + 1
+		cursor = _min_of_find(p_text.find(\">\", cursor), p_text.find(\"]\", cursor))
+		
+		if cursor == -1:
+			return \"<bad markup>\"
+		
+		var markup: PackedStringArray = p_text.substr(old_cursor, cursor - old_cursor).split(\"=\")
+		
+		match markup[0]:
+			\"b\":
+				result += \"[b]\"
+				closing_markup = \"[/b]\"
+			\"i\":
+				result += \"[i]\"
+				closing_markup = \"[/i]\"
+			\"ib\":
+				result += \"[b][i]\"
+				closing_markup = \"[/i][/b]\"
+			\"big\":
+				result += \"[font_size=24]\"
+				closing_markup = \"[/font_size]\"
+			\"colored\":
+				result += \"[color=red]\"
+				closing_markup = \"[/color]\"
+			\"wave\":
+				result += \"[wave freq=8 amp=60]\"
+				closing_markup = \"[/wave]\"
+			\"tornado\":
+				result += \"[tornado freq=10 radius=4]\"
+				closing_markup = \"[/tornado]\"
+			\"shake\":
+				result += \"[shake]\"
+				closing_markup = \"[/shake]\"
+			\"rainbow\":
+				result += \"[rainbow]\"
+				closing_markup = \"[/rainbow]\"
+			
+			\"pause\":
+				result += \"[hint=%s second(s)][img]res://textures/pause.svg[/img][/hint]\" % markup[1]
+				closing_markup = \"\"
+			
+			\"playback\":
+				result += \"[hint=%s times speed][img]res://textures/playback.svg[/img][/hint]\" % markup[1]
+				closing_markup = \"\"
+			
+			\"/\":
+				result += closing_markup
+			_:
+				closing_markup = \"\"
+		
+		old_cursor = cursor + 1
+	
+	return result
+
+func _min_of_find(p_a: int, p_b: int) -> int:
+	if p_a == -1:
+		return p_b
+	elif p_b == -1:
+		return p_a
+	else:
+		return min(p_a, p_b)
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1fq5o"]
+bg_color = Color(0, 0, 0, 0.392157)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+corner_detail = 3
+
+[node name="DialogLineEditor" type="HBoxContainer"]
+offset_right = 251.0
+offset_bottom = 80.0
+script = SubResource("GDScript_tji34")
+
+[node name="TextZone" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TextEdit" type="TextEdit" parent="TextZone"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+placeholder_text = "Write a dialog line here..."
+wrap_mode = 1
+scroll_fit_content_height = true
+
+[node name="LabelContainer" type="PanelContainer" parent="TextZone"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_1fq5o")
+
+[node name="MarginContainer" type="MarginContainer" parent="TextZone/LabelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 2
+
+[node name="Label" type="RichTextLabel" parent="TextZone/LabelContainer/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+
+[node name="RemoveButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Remove this dialog line. Warning, currently there is no undo/redo, tell me if you want me to add it. Sowy UwU"
+theme_override_font_sizes/font_size = 24
+text = " - "
+
+[connection signal="focus_exited" from="TextZone/TextEdit" to="." method="_on_text_edit_focus_exited"]
+[connection signal="gui_input" from="TextZone/LabelContainer/MarginContainer/Label" to="." method="_on_label_gui_input"]

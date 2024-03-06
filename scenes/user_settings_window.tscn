@@ -1,0 +1,92 @@
+[gd_scene load_steps=4 format=3 uid="uid://dnsghr0lveva"]
+
+[ext_resource type="Script" path="res://scripts/user_settings_window.gd" id="1_ronex"]
+[ext_resource type="Texture2D" uid="uid://ct1inuhd1ti1i" path="res://textures/gigamongass.jpg" id="2_q27kw"]
+
+[sub_resource type="GDScript" id="GDScript_dyqyn"]
+resource_name = "OtherScript"
+script/source = "extends VBoxContainer
+
+func _on_reset_session_button_pressed():
+	Root.session.clear_recent_files()
+"
+
+[node name="UserSettingsWindow" type="Window"]
+title = "Settings"
+initial_position = 2
+size = Vector2i(600, 450)
+min_size = Vector2i(600, 450)
+script = ExtResource("1_ronex")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HSplitContainer" type="HSplitContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 150
+
+[node name="Categories" type="ItemList" parent="VBoxContainer/HSplitContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+item_count = 2
+item_0/text = "Other"
+item_1/text = "Funny"
+
+[node name="Settings" type="Control" parent="VBoxContainer/HSplitContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Other" type="VBoxContainer" parent="VBoxContainer/HSplitContainer/Settings"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_dyqyn")
+
+[node name="ResetSessionButton" type="Button" parent="VBoxContainer/HSplitContainer/Settings/Other"]
+layout_mode = 2
+tooltip_text = "Resets the session, which right is basically only the recent file list."
+text = "Reset Session"
+
+[node name="Funny" type="VBoxContainer" parent="VBoxContainer/HSplitContainer/Settings"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="VBoxContainer/HSplitContainer/Settings/Funny"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_font_sizes/normal_font_size = 35
+bbcode_enabled = true
+text = "[center][rainbow freq=0.2][shake level=20]GIGAMONGASS[/shake][/rainbow][/center]"
+fit_content = true
+scroll_active = false
+
+[node name="Image" type="TextureRect" parent="VBoxContainer/HSplitContainer/Settings/Funny"]
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("2_q27kw")
+expand_mode = 2
+stretch_mode = 5
+
+[node name="CloseButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = " Close "
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="item_selected" from="VBoxContainer/HSplitContainer/Categories" to="." method="_on_categories_item_selected"]
+[connection signal="pressed" from="VBoxContainer/HSplitContainer/Settings/Other/ResetSessionButton" to="VBoxContainer/HSplitContainer/Settings/Other" method="_on_reset_session_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/CloseButton" to="." method="_on_close_requested"]

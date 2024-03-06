@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3 uid="uid://cw51xspvg8mg"]
+
+[ext_resource type="Script" path="res://scripts/dialog_event_node.gd" id="1_8tcn0"]
+[ext_resource type="Texture2D" uid="uid://2mtyr0oretqa" path="res://textures/event.svg" id="2_3r1ws"]
+
+[node name="DialogEventNode" type="GraphNode"]
+offset_right = 340.0
+offset_bottom = 95.0
+title = "Dialog Event"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(0.164706, 0.498039, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(0.164706, 0.498039, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+script = ExtResource("1_8tcn0")
+node_icon = ExtResource("2_3r1ws")
+
+[node name="NameEdit" type="LineEdit" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Write the event name here..."
+
+[connection signal="dragged" from="." to="." method="_on_dragged"]
+[connection signal="focus_exited" from="NameEdit" to="." method="_on_name_edit_focus_exited"]

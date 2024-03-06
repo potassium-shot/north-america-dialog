@@ -1,0 +1,29 @@
+[gd_scene load_steps=2 format=3 uid="uid://cd2jwphb6wdvm"]
+
+[sub_resource type="GDScript" id="GDScript_ctpqp"]
+resource_name = "MainScript"
+script/source = "extends HBoxContainer
+
+var text: String:
+	get:
+		return %LineEdit.text
+	
+	set(value):
+		%LineEdit.text = value
+"
+
+[node name="DialogOptionEditor" type="HBoxContainer"]
+size_flags_horizontal = 3
+script = SubResource("GDScript_ctpqp")
+
+[node name="LineEdit" type="LineEdit" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Write option text here..."
+
+[node name="RemoveButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = " - "

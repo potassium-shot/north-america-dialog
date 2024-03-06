@@ -1,0 +1,60 @@
+[gd_scene load_steps=10 format=3 uid="uid://gskmxx0cuix5"]
+
+[ext_resource type="Texture2D" uid="uid://boh8ymkpwhrp1" path="res://textures/confetti.svg" id="1_84t07"]
+[ext_resource type="Script" path="res://scripts/confettis.gd" id="2_blik2"]
+
+[sub_resource type="Gradient" id="Gradient_ek7u2"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.233333, 0.493333, 0.753333)
+colors = PackedColorArray(0.944935, 0.304682, 0.282707, 1, 0.304954, 0.732684, 0.306147, 1, 0.330178, 0.563784, 0.935582, 1, 0.904808, 0.744501, 0.24084, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_mw6cn"]
+gradient = SubResource("Gradient_ek7u2")
+
+[sub_resource type="Curve" id="Curve_hsfnn"]
+_data = [Vector2(0.258427, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.15491, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_t1nuq"]
+curve = SubResource("Curve_hsfnn")
+
+[sub_resource type="Curve" id="Curve_s8l3r"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_rimlt"]
+curve = SubResource("Curve_s8l3r")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_5cdv4"]
+lifetime_randomness = 0.7
+particle_flag_disable_z = true
+angle_max = 360.0
+direction = Vector3(0, -1, 0)
+initial_velocity_min = 300.0
+initial_velocity_max = 600.0
+angular_velocity_min = -160.0
+angular_velocity_max = 160.0
+gravity = Vector3(0, 600, 0)
+damping_max = 20.0
+scale_min = 0.6
+scale_max = 1.2
+scale_curve = SubResource("CurveTexture_t1nuq")
+color_initial_ramp = SubResource("GradientTexture1D_mw6cn")
+turbulence_enabled = true
+turbulence_noise_strength = 2.0
+turbulence_influence_over_life = SubResource("CurveTexture_rimlt")
+
+[node name="Confettis" type="GPUParticles2D"]
+position = Vector2(0, -10)
+emitting = false
+amount = 50
+process_material = SubResource("ParticleProcessMaterial_5cdv4")
+texture = ExtResource("1_84t07")
+lifetime = 3.0
+one_shot = true
+explosiveness = 0.8
+fixed_fps = 0
+draw_order = 0
+script = ExtResource("2_blik2")
+
+[connection signal="finished" from="." to="." method="_on_finished"]

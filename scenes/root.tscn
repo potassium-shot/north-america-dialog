@@ -1,0 +1,601 @@
+[gd_scene load_steps=31 format=3 uid="uid://c56ekhmihbmbi"]
+
+[ext_resource type="Script" path="res://scripts/search_dialog.gd" id="1_7a2a5"]
+[ext_resource type="PackedScene" uid="uid://dnsghr0lveva" path="res://scenes/user_settings_window.tscn" id="1_duiy1"]
+[ext_resource type="Script" path="res://scripts/graph_edit.gd" id="1_yctpn"]
+[ext_resource type="PackedScene" uid="uid://d1idf8pvmenph" path="res://scenes/speaker_list_editor.tscn" id="3_1c0lq"]
+
+[sub_resource type="GDScript" id="GDScript_utmuw"]
+resource_name = "MenuBarScript"
+script/source = "extends MenuBar
+
+@onready var open_file_dialog: FileDialog = %OpenFileDialog
+@onready var save_file_dialog: FileDialog = %SaveFileDialog
+@onready var export_file_dialog: FileDialog = %ExportFileDialog
+@onready var recent_popup_menu: PopupMenu = %Recent
+@onready var user_settings_window: Window = %UserSettingsWindow
+@onready var speaker_list_window: Window = %SpeakerListEditor
+
+@export var file_menu_shortcuts: Array[Shortcut]
+@export var edit_menu_shortcuts: Array[Shortcut]
+@export var help_menu_shortcuts: Array[Shortcut]
+
+func _enter_tree():
+	var file: PopupMenu = $File as PopupMenu
+	var edit: PopupMenu = $Edit as PopupMenu
+	var help: PopupMenu = $Help as PopupMenu
+	
+	for i in range(len(file_menu_shortcuts)):
+		file.set_item_shortcut(i, file_menu_shortcuts[i])
+	
+	for i in range(len(edit_menu_shortcuts)):
+		edit.set_item_shortcut(i, edit_menu_shortcuts[i])
+	
+	for i in range(len(help_menu_shortcuts)):
+		help.set_item_shortcut(i, help_menu_shortcuts[i])
+
+func _ready():
+	var file: PopupMenu = $File as PopupMenu
+	file.set_item_submenu(2, \"Recent\")
+	
+	_on_recent_files_changed()
+	Root.session.changed.connect(_on_recent_files_changed)
+
+func _on_recent_files_changed():
+	recent_popup_menu.clear()
+	
+	for i in range(min(len(Root.session.recent_files), 10)):
+		var path: String = Root.session.recent_files[i]
+		recent_popup_menu.add_item(path.get_file())
+		recent_popup_menu.set_item_tooltip(i, path)
+		recent_popup_menu.set_item_shortcut(i, _get_number_shortcut(i))
+
+func _on_file_id_pressed(id: int):
+	match id:
+		0: # New
+			Root.new_file()
+		
+		1: # Open
+			open_file_dialog.popup_centered()
+		
+		# 2 Recent is a submenu
+		
+		# 3 Separator
+		
+		4: # Save
+			if Root.is_current_file_saved():
+				Root.save_file(Root.current_file_path)
+			else:
+				save_file_dialog.popup_centered()
+		
+		5: # Save As
+			save_file_dialog.popup_centered()
+		
+		6: # Export
+			if Root.current_project.export_path.is_empty():
+				export_file_dialog.popup_centered()
+			else:
+				Root.export_file(Root.current_project.export_path)
+		
+		7: # Export As
+			export_file_dialog.popup_centered()
+		
+		# 8 : Separator
+		
+		9: # Close
+			Root.close_file()
+		
+		10: # Quit
+			Root.quit()
+
+func _on_recent_index_pressed(p_index: int):
+	Root.open_file(Root.session.recent_files[p_index])
+
+func _on_edit_id_pressed(p_id: int):
+	match p_id:
+		0:
+			speaker_list_window.popup_centered()
+		
+		1:
+			%SearchDialog.show()
+		
+		2:
+			user_settings_window.popup_centered()
+
+func _on_open_file_dialog_file_selected(p_path: String):
+	Root.open_file(p_path)
+
+func _on_save_file_dialog_file_selected(p_path: String):
+	Root.save_file(p_path)
+
+func _on_export_file_dialog_file_selected(p_path: String):
+	var i: int = 0
+	var max_i: int = min(len(p_path), len(Root.current_file_path))
+	
+	while i < max_i:
+		if p_path[i] != Root.current_file_path[i]:
+			break
+		
+		i += 1
+	
+	p_path = \"./%s\" % p_path.substr(i)
+	
+	Root.export_file(p_path)
+	Root.mark_modified()
+
+func _get_number_shortcut(p_number: int) -> Shortcut:
+	var shortcut = Shortcut.new()
+	var event = InputEventKey.new()
+	
+	event.ctrl_pressed = true
+	
+	if p_number < 9 and p_number >= 0:
+		event.physical_keycode = KEY_1 + p_number
+	elif p_number == 9:
+		event.physical_keycode = KEY_0
+	else:
+		assert(false, \"%s is a wrong shortcut number\" % p_number)
+	
+	shortcut.events.push_back(event)
+	return shortcut
+
+func _on_help_id_pressed(p_id: int):
+	match p_id:
+		0:
+			Root.session._asked_for_help_times += 1
+			Root.auto_popup.pop(\"You asked for help %s times!\" % Root.session._asked_for_help_times)
+"
+
+[sub_resource type="InputEventKey" id="InputEventKey_elil2"]
+device = -1
+ctrl_pressed = true
+keycode = 78
+
+[sub_resource type="Shortcut" id="Shortcut_6db7r"]
+events = [SubResource("InputEventKey_elil2")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_spjwx"]
+device = -1
+ctrl_pressed = true
+keycode = 79
+
+[sub_resource type="Shortcut" id="Shortcut_tmmtl"]
+events = [SubResource("InputEventKey_spjwx")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_wmyga"]
+device = -1
+ctrl_pressed = true
+keycode = 83
+
+[sub_resource type="Shortcut" id="Shortcut_vxty0"]
+events = [SubResource("InputEventKey_wmyga")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_8d0cp"]
+device = -1
+alt_pressed = true
+ctrl_pressed = true
+keycode = 83
+
+[sub_resource type="Shortcut" id="Shortcut_nm88k"]
+events = [SubResource("InputEventKey_8d0cp")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_1qq36"]
+device = -1
+ctrl_pressed = true
+keycode = 69
+
+[sub_resource type="Shortcut" id="Shortcut_wactn"]
+events = [SubResource("InputEventKey_1qq36")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_2n0xj"]
+device = -1
+alt_pressed = true
+ctrl_pressed = true
+keycode = 69
+unicode = 8364
+
+[sub_resource type="Shortcut" id="Shortcut_faq0p"]
+events = [SubResource("InputEventKey_2n0xj")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_e6ynl"]
+device = -1
+ctrl_pressed = true
+keycode = 87
+
+[sub_resource type="Shortcut" id="Shortcut_b10e3"]
+events = [SubResource("InputEventKey_e6ynl")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_pcdba"]
+device = -1
+ctrl_pressed = true
+keycode = 81
+
+[sub_resource type="Shortcut" id="Shortcut_j2qvl"]
+events = [SubResource("InputEventKey_pcdba")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_ohy6g"]
+device = -1
+ctrl_pressed = true
+keycode = 72
+
+[sub_resource type="Shortcut" id="Shortcut_jamtq"]
+events = [SubResource("InputEventKey_ohy6g")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_bn866"]
+device = -1
+ctrl_pressed = true
+keycode = 70
+
+[sub_resource type="Shortcut" id="Shortcut_a0obe"]
+events = [SubResource("InputEventKey_bn866")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_pvo03"]
+device = -1
+ctrl_pressed = true
+keycode = 44
+physical_keycode = 44
+key_label = 44
+
+[sub_resource type="Shortcut" id="Shortcut_hw1cs"]
+events = [SubResource("InputEventKey_pvo03")]
+
+[sub_resource type="GDScript" id="GDScript_vnpqb"]
+resource_name = "UnsavedDialog"
+script/source = "@tool
+extends ConfirmationDialog
+
+var custom_button: Button
+var _answer_is_yes: bool
+
+signal user_answered(p_yes: bool)
+
+func prompt() -> bool:
+	popup_centered()
+	await user_answered
+	return _answer_is_yes
+
+func _enter_tree():
+	custom_button = add_button(\"Cancel\", true, &\"cancel\")
+
+func _exit_tree():
+	if custom_button:
+		remove_button(custom_button)
+
+func _on_confirmed():
+	if Root.is_current_file_saved():
+		Root.save_file(Root.current_file_path)
+		_answer_is_yes = true
+		user_answered.emit(true)
+	else:
+		%SaveFileDialog.popup_centered()
+		%SaveFileDialog.file_selected.connect(_on_save_confirmed, CONNECT_ONE_SHOT)
+		%SaveFileDialog.canceled.connect(_on_save_canceled, CONNECT_ONE_SHOT)
+
+func _on_save_confirmed(_p_path: String):
+	%SaveFileDialog.canceled.disconnect(_on_save_canceled)
+	await get_tree().process_frame
+	_answer_is_yes = true
+	user_answered.emit(true)
+
+func _on_save_canceled():
+	%SaveFileDialog.file_selected.disconnect(_on_save_confirmed)
+	_answer_is_yes = false
+	user_answered.emit(false)
+
+func _on_canceled():
+	_answer_is_yes = true
+	user_answered.emit(true)
+
+func _on_custom_action(p_action: StringName):
+	match p_action:
+		&\"cancel\":
+			_answer_is_yes = false
+			user_answered.emit(false)
+			hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_w35q7"]
+resource_name = "AutoPopup"
+script/source = "extends Window
+
+var tween: Tween
+
+func pop(p_message: String):
+	if tween:
+		tween.kill()
+	
+	Confettis.spawn_at(get_parent().get_viewport_rect().get_center(), get_parent())
+	
+	%Label.text = \"[rainbow freq=0.4 sat=0.3][tornado freq=12 radius=4.5]%s[/tornado][/rainbow]\" % p_message
+	size = %Label.get_minimum_size() + Vector2(20.0, 10.0)
+	popup_centered()
+	
+	%Background.modulate.a = 1.0
+	
+	var target_color: Color = %Background.modulate
+	target_color.a = 0.0
+	
+	tween = create_tween()
+	tween.tween_interval(1.0)
+	tween.tween_property(%Background, \"modulate\", target_color, 1.5)
+	tween.finished.connect(_on_tween_finished, CONNECT_ONE_SHOT)
+
+func _on_tween_finished():
+	tween = null
+	%Label.text = \"<msg>\"
+	hide()
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ebn3c"]
+bg_color = Color(0.239216, 0.239216, 0.239216, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+corner_detail = 4
+
+[node name="UiRoot" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuBar" type="MenuBar" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+flat = true
+script = SubResource("GDScript_utmuw")
+file_menu_shortcuts = Array[Shortcut]([SubResource("Shortcut_6db7r"), SubResource("Shortcut_tmmtl"), null, null, SubResource("Shortcut_vxty0"), SubResource("Shortcut_nm88k"), SubResource("Shortcut_wactn"), SubResource("Shortcut_faq0p"), null, SubResource("Shortcut_b10e3"), SubResource("Shortcut_j2qvl")])
+edit_menu_shortcuts = Array[Shortcut]([SubResource("Shortcut_jamtq"), SubResource("Shortcut_a0obe")])
+help_menu_shortcuts = Array[Shortcut]([SubResource("Shortcut_hw1cs")])
+
+[node name="File" type="PopupMenu" parent="VBoxContainer/MenuBar"]
+item_count = 11
+item_0/text = "New"
+item_0/id = 0
+item_1/text = "Open"
+item_1/id = 1
+item_2/text = "Recent"
+item_2/id = 2
+item_3/text = ""
+item_3/id = 3
+item_3/separator = true
+item_4/text = "Save"
+item_4/id = 4
+item_5/text = "Save As"
+item_5/id = 5
+item_6/text = "Export"
+item_6/id = 6
+item_7/text = "Export As"
+item_7/id = 7
+item_8/text = ""
+item_8/id = 8
+item_8/separator = true
+item_9/text = "Close"
+item_9/id = 9
+item_10/text = "Quit"
+item_10/id = 10
+
+[node name="Recent" type="PopupMenu" parent="VBoxContainer/MenuBar/File"]
+unique_name_in_owner = true
+
+[node name="Edit" type="PopupMenu" parent="VBoxContainer/MenuBar"]
+item_count = 3
+item_0/text = "Speakers"
+item_0/id = 0
+item_1/text = "Search"
+item_1/id = 1
+item_2/text = "Settings"
+item_2/id = 2
+
+[node name="Help" type="PopupMenu" parent="VBoxContainer/MenuBar"]
+item_count = 1
+item_0/text = "Just ping me on discord lol"
+item_0/id = 0
+
+[node name="SearchDialog" type="VBoxContainer" parent="VBoxContainer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+script = ExtResource("1_7a2a5")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/SearchDialog"]
+layout_mode = 2
+
+[node name="SearchString" type="LineEdit" parent="VBoxContainer/SearchDialog/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Type something to search..."
+
+[node name="MatchCaseToggle" type="CheckBox" parent="VBoxContainer/SearchDialog/HBoxContainer"]
+layout_mode = 2
+text = "Match case"
+
+[node name="SearchResult" type="Label" parent="VBoxContainer/SearchDialog"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HFlowContainer" type="HFlowContainer" parent="VBoxContainer/SearchDialog"]
+layout_mode = 2
+size_flags_vertical = 10
+alignment = 1
+
+[node name="PreviousButton" type="Button" parent="VBoxContainer/SearchDialog/HFlowContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "<"
+
+[node name="OccurenceLabel" type="Label" parent="VBoxContainer/SearchDialog/HFlowContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0/0"
+
+[node name="NextButton" type="Button" parent="VBoxContainer/SearchDialog/HFlowContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = ">"
+
+[node name="Spacer" type="Control" parent="VBoxContainer/SearchDialog/HFlowContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="SearchButton" type="Button" parent="VBoxContainer/SearchDialog/HFlowContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Search"
+
+[node name="CancelButton" type="Button" parent="VBoxContainer/SearchDialog/HFlowContainer"]
+layout_mode = 2
+text = "Cancel"
+
+[node name="GraphEdit" type="GraphEdit" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+right_disconnects = true
+show_zoom_label = true
+script = ExtResource("1_yctpn")
+
+[node name="ContextMenu" type="PopupMenu" parent="VBoxContainer/GraphEdit"]
+unique_name_in_owner = true
+size = Vector2i(150, 100)
+item_count = 4
+item_0/text = "Add Dialog Node (1)"
+item_0/id = 0
+item_1/text = "Add Entry (2)"
+item_1/id = 1
+item_2/text = "Add End (3)"
+item_2/id = 2
+item_3/text = "Add Event (4)"
+item_3/id = 3
+
+[node name="OpenFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Open a File"
+size = Vector2i(600, 450)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.tres ; Dialog Text Resource")
+
+[node name="SaveFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+size = Vector2i(600, 450)
+access = 2
+filters = PackedStringArray("*.tres ; Dialog Text Resource")
+
+[node name="ExportFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Export Files"
+size = Vector2i(600, 450)
+mode_overrides_title = false
+access = 2
+filters = PackedStringArray("*.csv ; Comma Separated Values")
+
+[node name="UserSettingsWindow" parent="." instance=ExtResource("1_duiy1")]
+unique_name_in_owner = true
+visible = false
+
+[node name="SpeakerListEditor" parent="." instance=ExtResource("3_1c0lq")]
+unique_name_in_owner = true
+visible = false
+
+[node name="UnsavedConfirmationDialog" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "Unsaved Changes"
+position = Vector2i(0, 36)
+size = Vector2i(392, 106)
+ok_button_text = "Save"
+dialog_text = "Some changes are unsaved.
+Do you want to quit O.O ?"
+cancel_button_text = "Don't Save"
+script = SubResource("GDScript_vnpqb")
+
+[node name="AutoPopup" type="Window" parent="."]
+unique_name_in_owner = true
+transparent_bg = true
+initial_position = 2
+size = Vector2i(250, 100)
+visible = false
+wrap_controls = true
+unresizable = true
+borderless = true
+always_on_top = true
+transparent = true
+unfocusable = true
+popup_window = true
+script = SubResource("GDScript_w35q7")
+
+[node name="Background" type="Panel" parent="AutoPopup"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(250, 50)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_ebn3c")
+
+[node name="Label" type="RichTextLabel" parent="AutoPopup/Background"]
+unique_name_in_owner = true
+clip_contents = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -25.5
+offset_top = -11.5
+offset_right = 25.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "<msg>"
+fit_content = true
+autowrap_mode = 0
+
+[connection signal="id_pressed" from="VBoxContainer/MenuBar/File" to="VBoxContainer/MenuBar" method="_on_file_id_pressed"]
+[connection signal="index_pressed" from="VBoxContainer/MenuBar/File/Recent" to="VBoxContainer/MenuBar" method="_on_recent_index_pressed"]
+[connection signal="id_pressed" from="VBoxContainer/MenuBar/Edit" to="VBoxContainer/MenuBar" method="_on_edit_id_pressed"]
+[connection signal="id_pressed" from="VBoxContainer/MenuBar/Help" to="VBoxContainer/MenuBar" method="_on_help_id_pressed"]
+[connection signal="text_changed" from="VBoxContainer/SearchDialog/HBoxContainer/SearchString" to="VBoxContainer/SearchDialog" method="_on_search_string_text_changed"]
+[connection signal="text_submitted" from="VBoxContainer/SearchDialog/HBoxContainer/SearchString" to="VBoxContainer/SearchDialog" method="_on_search_string_text_submitted"]
+[connection signal="toggled" from="VBoxContainer/SearchDialog/HBoxContainer/MatchCaseToggle" to="VBoxContainer/SearchDialog" method="_on_match_case_toggle_toggled"]
+[connection signal="pressed" from="VBoxContainer/SearchDialog/HFlowContainer/PreviousButton" to="VBoxContainer/SearchDialog" method="_on_previous_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/SearchDialog/HFlowContainer/NextButton" to="VBoxContainer/SearchDialog" method="_on_next_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/SearchDialog/HFlowContainer/SearchButton" to="VBoxContainer/SearchDialog" method="_on_search_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/SearchDialog/HFlowContainer/CancelButton" to="VBoxContainer/SearchDialog" method="_on_cancel_button_pressed"]
+[connection signal="connection_request" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_connection_request"]
+[connection signal="copy_nodes_request" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_copy_nodes_request"]
+[connection signal="delete_nodes_request" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_delete_nodes_request"]
+[connection signal="disconnection_request" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_disconnection_request"]
+[connection signal="duplicate_nodes_request" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_duplicate_nodes_request"]
+[connection signal="end_node_move" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_end_node_move"]
+[connection signal="node_deselected" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_node_deselected"]
+[connection signal="node_selected" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_node_selected"]
+[connection signal="paste_nodes_request" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_paste_nodes_request"]
+[connection signal="id_pressed" from="VBoxContainer/GraphEdit/ContextMenu" to="VBoxContainer/GraphEdit" method="_on_context_menu_id_pressed"]
+[connection signal="file_selected" from="OpenFileDialog" to="VBoxContainer/MenuBar" method="_on_open_file_dialog_file_selected"]
+[connection signal="file_selected" from="SaveFileDialog" to="VBoxContainer/MenuBar" method="_on_save_file_dialog_file_selected"]
+[connection signal="file_selected" from="ExportFileDialog" to="VBoxContainer/MenuBar" method="_on_export_file_dialog_file_selected"]
+[connection signal="canceled" from="UnsavedConfirmationDialog" to="UnsavedConfirmationDialog" method="_on_canceled"]
+[connection signal="confirmed" from="UnsavedConfirmationDialog" to="UnsavedConfirmationDialog" method="_on_confirmed"]
+[connection signal="custom_action" from="UnsavedConfirmationDialog" to="UnsavedConfirmationDialog" method="_on_custom_action"]
