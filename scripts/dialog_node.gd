@@ -28,13 +28,26 @@ func _ready():
 
 func _on_dragged(p_from: Vector2, p_to: Vector2):
 	if is_node_ready() and p_from != p_to:
-		node_resource.position = position_offset
+		move_node(p_from, p_to)
+
+func _update_position():
+	node_resource.position = position_offset
 
 func _on_resize_request(p_new_minsize: Vector2):
 	if is_node_ready():
-		node_resource.size = p_new_minsize
-	
-	Root.mark_modified()
+		var undo_redo: UndoRedo = Root.current_project.undo_redo
+		undo_redo.create_action("Resize Node")
+		
+		undo_redo.add_do_property(node_resource, &"size", p_new_minsize)
+		undo_redo.add_do_method(_update_size)
+		
+		undo_redo.add_undo_property(node_resource, &"size", node_resource.size)
+		undo_redo.add_undo_method(_update_size)
+		
+		undo_redo.commit_action()
+
+func _update_size():
+	size = node_resource.size
 
 #region Speakers
 
@@ -70,7 +83,17 @@ func _dialog_node_speaker_changed():
 	Root.mark_modified()
 
 func _on_speaker_selected(p_index: int):
-	match speaker_selector.get_popup().get_item_text(p_index):
+	var undo_redo: UndoRedo = Root.current_project.undo_redo
+	undo_redo.create_action("Change Speaker")
+	
+	undo_redo.add_do_method(select_speaker.bind(speaker_selector.get_popup().get_item_text(p_index)))
+	
+	undo_redo.add_undo_method(select_speaker.bind(node_resource.speaker))
+	
+	undo_redo.commit_action()
+
+func select_speaker(p_name: StringName):
+	match p_name:
 		NO_SPEAKER_TEXT:
 			node_resource.speaker = ""
 		var other:
@@ -97,20 +120,42 @@ func _dialog_node_lines_changed():
 		
 		editor.get_node("%TextEdit").focus_exited.connect(_on_line_editor_focus_exited.bind(i))
 		editor.get_node("%RemoveButton").pressed.connect(_on_line_editor_removed.bind(i))
-	
-	Root.mark_modified()
 
 func _on_add_line_button_pressed():
-	node_resource.push_line("")
-	_dialog_node_lines_changed()
+	var undo_redo: UndoRedo = Root.current_project.undo_redo
+	undo_redo.create_action("Add Dialog Line")
+	
+	undo_redo.add_do_method(node_resource.push_line.bind(""))
+	undo_redo.add_do_method(_dialog_node_lines_changed)
+	
+	undo_redo.add_undo_method(node_resource.remove_line.bind(node_resource.line_count))
+	undo_redo.add_undo_method(_dialog_node_lines_changed)
+	
+	undo_redo.commit_action()
 
 func _on_line_editor_focus_exited(p_index: int):
-	node_resource.set_line(p_index, dialog_line_editors[p_index].text)
-	Root.mark_modified()
+	var undo_redo: UndoRedo = Root.current_project.undo_redo
+	undo_redo.create_action("Edit Dialog Line")
+	
+	undo_redo.add_do_method(node_resource.set_line.bind(p_index, dialog_line_editors[p_index].text))
+	undo_redo.add_do_method(_dialog_node_lines_changed)
+	
+	undo_redo.add_undo_method(node_resource.set_line.bind(p_index, node_resource.get_line(p_index)))
+	undo_redo.add_undo_method(_dialog_node_lines_changed)
+	
+	undo_redo.commit_action()
 
 func _on_line_editor_removed(p_index: int):
-	node_resource.remove_line(p_index)
-	_dialog_node_lines_changed()
+	var undo_redo: UndoRedo = Root.current_project.undo_redo
+	undo_redo.create_action("Remove Dialog Line")
+	
+	undo_redo.add_do_method(node_resource.remove_line.bind(p_index))
+	undo_redo.add_do_method(_dialog_node_lines_changed)
+	
+	undo_redo.add_undo_method(node_resource.insert_line.bind(p_index, node_resource.get_line(p_index)))
+	undo_redo.add_undo_method(_dialog_node_lines_changed)
+	
+	undo_redo.commit_action()
 
 #endregion Lines
 
@@ -140,19 +185,55 @@ func _dialog_node_options_changed():
 			
 			editor.get_node("%LineEdit").focus_exited.connect(_on_option_editor_focus_exited.bind(i))
 			editor.get_node("%RemoveButton").pressed.connect(_on_option_editor_removed.bind(i))
-	
-	Root.mark_modified()
 
 func _on_add_option_button_pressed():
+	var undo_redo: UndoRedo = Root.current_project.undo_redo
+	undo_redo.create_action("Add Dialog Option")
+	
+	undo_redo.add_do_method(_push_empty_option)
+	undo_redo.add_do_method(_dialog_node_options_changed)
+	
+	undo_redo.add_undo_method(node_resource.remove_option.bind(node_resource.option_count))
+	undo_redo.add_undo_method(_dialog_node_options_changed)
+	
+	undo_redo.commit_action()
+
+func _push_empty_option():
 	node_resource.push_option(DialogOption.new())
-	_dialog_node_options_changed()
 
 func _on_option_editor_focus_exited(p_index: int):
-	node_resource.get_option(p_index).text = dialog_options_editors[p_index].text
-	Root.mark_modified()
+	var undo_redo: UndoRedo = Root.current_project.undo_redo
+	undo_redo.create_action("Edit Dialog Option")
+	
+	undo_redo.add_do_property(
+		node_resource.get_option(p_index),
+		&"text",
+		dialog_options_editors[p_index].text,
+	)
+	undo_redo.add_do_method(_dialog_node_options_changed)
+	
+	var option: DialogOption = node_resource.get_option(p_index)
+	undo_redo.add_undo_property(
+		option,
+		&"text",
+		option.text,
+	)
+	undo_redo.add_undo_method(_dialog_node_options_changed)
+	
+	undo_redo.commit_action()
 
 func _on_option_editor_removed(p_index: int):
-	node_resource.remove_option(p_index)
-	_dialog_node_options_changed()
+	var undo_redo: UndoRedo = Root.current_project.undo_redo
+	undo_redo.create_action("Remove Dialog Option")
+	
+	undo_redo.add_do_method(node_resource.remove_option.bind(p_index))
+	undo_redo.add_do_method(_dialog_node_options_changed)
+	
+	var option: DialogOption = node_resource.get_option(p_index)
+	undo_redo.add_undo_method(node_resource.insert_option.bind(p_index, option))
+	undo_redo.add_undo_method(_dialog_node_options_changed)
+	undo_redo.add_undo_reference(option)
+	
+	undo_redo.commit_action()
 
 #endregion Options

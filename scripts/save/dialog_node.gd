@@ -37,6 +37,10 @@ func push_line(p_line: String):
 	_lines.push_back(p_line)
 	emit_changed()
 
+func insert_line(p_index: int, p_line: String):
+	_lines.insert(p_index, p_line)
+	emit_changed()
+
 func remove_line(p_index: int):
 	_lines.remove_at(p_index)
 	emit_changed()
@@ -57,6 +61,11 @@ func get_line(p_index: int) -> String:
 
 func push_option(p_option: DialogOption):
 	_options.push_back(p_option)
+	p_option.changed.connect(emit_changed)
+	emit_changed()
+
+func insert_option(p_index: int, p_option: DialogOption):
+	_options.insert(p_index, p_option)
 	p_option.changed.connect(emit_changed)
 	emit_changed()
 

@@ -19,6 +19,8 @@ class_name DialogTree extends Resource
 
 @export var export_path: String = ""
 
+var undo_redo: UndoRedo = UndoRedo.new()
+
 signal speakers_changed()
 
 func update_speakers():
@@ -72,3 +74,7 @@ func search(p_text: String, p_case_sensitive: bool) -> Array[DialogTreeNode]:
 	var result: Array[DialogTreeNode] = []
 	result.assign(_nodes.values().filter(func (n): return n.search(p_text, p_case_sensitive)))
 	return result
+
+func _notification(p_what: int):
+	if p_what == NOTIFICATION_PREDELETE:
+		undo_redo.free()

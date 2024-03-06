@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://c56ekhmihbmbi"]
+[gd_scene load_steps=36 format=3 uid="uid://c56ekhmihbmbi"]
 
 [ext_resource type="Script" path="res://scripts/search_dialog.gd" id="1_7a2a5"]
 [ext_resource type="PackedScene" uid="uid://dnsghr0lveva" path="res://scenes/user_settings_window.tscn" id="1_duiy1"]
@@ -94,12 +94,34 @@ func _on_recent_index_pressed(p_index: int):
 func _on_edit_id_pressed(p_id: int):
 	match p_id:
 		0:
+			var undo_redo: UndoRedo = Root.current_project.undo_redo
+			
+			if undo_redo.has_undo():
+				%StatusLabel.print(
+					\"Undo: %s\" %
+					undo_redo.get_current_action_name()
+				)
+				undo_redo.undo()
+			else:
+				%StatusLabel.print(\"Already at oldest change\")
+		1:
+			var undo_redo: UndoRedo = Root.current_project.undo_redo
+			
+			if undo_redo.has_redo():
+				undo_redo.redo()
+				%StatusLabel.print(
+					\"Redo: %s\" %
+					undo_redo.get_current_action_name()
+				)
+			else:
+				%StatusLabel.print(\"Already at latest change\")
+		2:
 			speaker_list_window.popup_centered()
 		
-		1:
+		3:
 			%SearchDialog.show()
 		
-		2:
+		4:
 			user_settings_window.popup_centered()
 
 func _on_open_file_dialog_file_selected(p_path: String):
@@ -213,6 +235,22 @@ keycode = 81
 [sub_resource type="Shortcut" id="Shortcut_j2qvl"]
 events = [SubResource("InputEventKey_pcdba")]
 
+[sub_resource type="InputEventKey" id="InputEventKey_iju8v"]
+device = -1
+ctrl_pressed = true
+keycode = 90
+
+[sub_resource type="Shortcut" id="Shortcut_s3m72"]
+events = [SubResource("InputEventKey_iju8v")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_prmje"]
+device = -1
+ctrl_pressed = true
+keycode = 89
+
+[sub_resource type="Shortcut" id="Shortcut_kfy8o"]
+events = [SubResource("InputEventKey_prmje")]
+
 [sub_resource type="InputEventKey" id="InputEventKey_ohy6g"]
 device = -1
 ctrl_pressed = true
@@ -238,6 +276,35 @@ key_label = 44
 
 [sub_resource type="Shortcut" id="Shortcut_hw1cs"]
 events = [SubResource("InputEventKey_pvo03")]
+
+[sub_resource type="GDScript" id="GDScript_y1wls"]
+resource_name = "StatusLabelScript"
+script/source = "extends Label
+
+@export var show_duration: float = 2.5
+@export var animation_duration: float = 0.4
+@export var canceled_animation_duration: float = 0.1
+
+var tween: Tween = null
+
+func print(p_text: String):
+	if tween:
+		tween.kill()
+		tween = create_tween()
+		tween.set_ease(Tween.EASE_IN)
+		tween.set_trans(Tween.TRANS_QUINT)
+		tween.tween_property(self, \"visible_characters\", 0, canceled_animation_duration)
+		await tween.finished
+	
+	text = p_text
+	
+	tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_QUINT)
+	tween.tween_property(self, \"visible_characters\", len(p_text), animation_duration)
+	tween.tween_interval(show_duration)
+	tween.tween_property(self, \"visible_characters\", 0, animation_duration)
+"
 
 [sub_resource type="GDScript" id="GDScript_vnpqb"]
 resource_name = "UnsavedDialog"
@@ -350,16 +417,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MenuBar" type="MenuBar" parent="VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
+
+[node name="MenuBar" type="MenuBar" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 0
 flat = true
 script = SubResource("GDScript_utmuw")
 file_menu_shortcuts = Array[Shortcut]([SubResource("Shortcut_6db7r"), SubResource("Shortcut_tmmtl"), null, null, SubResource("Shortcut_vxty0"), SubResource("Shortcut_nm88k"), SubResource("Shortcut_wactn"), SubResource("Shortcut_faq0p"), null, SubResource("Shortcut_b10e3"), SubResource("Shortcut_j2qvl")])
-edit_menu_shortcuts = Array[Shortcut]([SubResource("Shortcut_jamtq"), SubResource("Shortcut_a0obe")])
+edit_menu_shortcuts = Array[Shortcut]([SubResource("Shortcut_s3m72"), SubResource("Shortcut_kfy8o"), SubResource("Shortcut_jamtq"), SubResource("Shortcut_a0obe")])
 help_menu_shortcuts = Array[Shortcut]([SubResource("Shortcut_hw1cs")])
 
-[node name="File" type="PopupMenu" parent="VBoxContainer/MenuBar"]
+[node name="File" type="PopupMenu" parent="VBoxContainer/HBoxContainer/MenuBar"]
 item_count = 11
 item_0/text = "New"
 item_0/id = 0
@@ -386,22 +457,39 @@ item_9/id = 9
 item_10/text = "Quit"
 item_10/id = 10
 
-[node name="Recent" type="PopupMenu" parent="VBoxContainer/MenuBar/File"]
+[node name="Recent" type="PopupMenu" parent="VBoxContainer/HBoxContainer/MenuBar/File"]
 unique_name_in_owner = true
 
-[node name="Edit" type="PopupMenu" parent="VBoxContainer/MenuBar"]
-item_count = 3
-item_0/text = "Speakers"
+[node name="Edit" type="PopupMenu" parent="VBoxContainer/HBoxContainer/MenuBar"]
+item_count = 5
+item_0/text = "Undo"
 item_0/id = 0
-item_1/text = "Search"
+item_1/text = "Redo"
 item_1/id = 1
-item_2/text = "Settings"
+item_2/text = "Speakers"
 item_2/id = 2
+item_3/text = "Search"
+item_3/id = 3
+item_4/text = "Settings"
+item_4/id = 4
 
-[node name="Help" type="PopupMenu" parent="VBoxContainer/MenuBar"]
+[node name="Help" type="PopupMenu" parent="VBoxContainer/HBoxContainer/MenuBar"]
 item_count = 1
 item_0/text = "Just ping me on discord lol"
 item_0/id = 0
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+vertical_alignment = 1
+visible_characters = 0
+script = SubResource("GDScript_y1wls")
+
+[node name="Spacer" type="Control" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
 
 [node name="SearchDialog" type="VBoxContainer" parent="VBoxContainer"]
 unique_name_in_owner = true
@@ -467,6 +555,7 @@ text = "Cancel"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
+scroll_offset = Vector2(0, -4)
 right_disconnects = true
 show_zoom_label = true
 script = ExtResource("1_yctpn")
@@ -572,10 +661,10 @@ text = "<msg>"
 fit_content = true
 autowrap_mode = 0
 
-[connection signal="id_pressed" from="VBoxContainer/MenuBar/File" to="VBoxContainer/MenuBar" method="_on_file_id_pressed"]
-[connection signal="index_pressed" from="VBoxContainer/MenuBar/File/Recent" to="VBoxContainer/MenuBar" method="_on_recent_index_pressed"]
-[connection signal="id_pressed" from="VBoxContainer/MenuBar/Edit" to="VBoxContainer/MenuBar" method="_on_edit_id_pressed"]
-[connection signal="id_pressed" from="VBoxContainer/MenuBar/Help" to="VBoxContainer/MenuBar" method="_on_help_id_pressed"]
+[connection signal="id_pressed" from="VBoxContainer/HBoxContainer/MenuBar/File" to="VBoxContainer/HBoxContainer/MenuBar" method="_on_file_id_pressed"]
+[connection signal="index_pressed" from="VBoxContainer/HBoxContainer/MenuBar/File/Recent" to="VBoxContainer/HBoxContainer/MenuBar" method="_on_recent_index_pressed"]
+[connection signal="id_pressed" from="VBoxContainer/HBoxContainer/MenuBar/Edit" to="VBoxContainer/HBoxContainer/MenuBar" method="_on_edit_id_pressed"]
+[connection signal="id_pressed" from="VBoxContainer/HBoxContainer/MenuBar/Help" to="VBoxContainer/HBoxContainer/MenuBar" method="_on_help_id_pressed"]
 [connection signal="text_changed" from="VBoxContainer/SearchDialog/HBoxContainer/SearchString" to="VBoxContainer/SearchDialog" method="_on_search_string_text_changed"]
 [connection signal="text_submitted" from="VBoxContainer/SearchDialog/HBoxContainer/SearchString" to="VBoxContainer/SearchDialog" method="_on_search_string_text_submitted"]
 [connection signal="toggled" from="VBoxContainer/SearchDialog/HBoxContainer/MatchCaseToggle" to="VBoxContainer/SearchDialog" method="_on_match_case_toggle_toggled"]
@@ -593,9 +682,9 @@ autowrap_mode = 0
 [connection signal="node_selected" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_node_selected"]
 [connection signal="paste_nodes_request" from="VBoxContainer/GraphEdit" to="VBoxContainer/GraphEdit" method="_on_paste_nodes_request"]
 [connection signal="id_pressed" from="VBoxContainer/GraphEdit/ContextMenu" to="VBoxContainer/GraphEdit" method="_on_context_menu_id_pressed"]
-[connection signal="file_selected" from="OpenFileDialog" to="VBoxContainer/MenuBar" method="_on_open_file_dialog_file_selected"]
-[connection signal="file_selected" from="SaveFileDialog" to="VBoxContainer/MenuBar" method="_on_save_file_dialog_file_selected"]
-[connection signal="file_selected" from="ExportFileDialog" to="VBoxContainer/MenuBar" method="_on_export_file_dialog_file_selected"]
+[connection signal="file_selected" from="OpenFileDialog" to="VBoxContainer/HBoxContainer/MenuBar" method="_on_open_file_dialog_file_selected"]
+[connection signal="file_selected" from="SaveFileDialog" to="VBoxContainer/HBoxContainer/MenuBar" method="_on_save_file_dialog_file_selected"]
+[connection signal="file_selected" from="ExportFileDialog" to="VBoxContainer/HBoxContainer/MenuBar" method="_on_export_file_dialog_file_selected"]
 [connection signal="canceled" from="UnsavedConfirmationDialog" to="UnsavedConfirmationDialog" method="_on_canceled"]
 [connection signal="confirmed" from="UnsavedConfirmationDialog" to="UnsavedConfirmationDialog" method="_on_confirmed"]
 [connection signal="custom_action" from="UnsavedConfirmationDialog" to="UnsavedConfirmationDialog" method="_on_custom_action"]

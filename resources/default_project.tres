@@ -17,7 +17,7 @@ thumbnail = ExtResource("4_vql4h")
 
 [resource]
 script = ExtResource("1_jymk3")
-nodes = {}
+_nodes = null
 speakers = {
 "Luigi": SubResource("Resource_5jo1b"),
 "Mario": SubResource("Resource_0dybg")
