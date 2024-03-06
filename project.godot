@@ -22,6 +22,11 @@ config/icon="res://icon.svg"
 
 Root="*res://scripts/root.gd"
 
+[editor]
+
+version_control/plugin_name="GitPlugin"
+version_control/autoload_on_startup=true
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/Todo_Manager/plugin.cfg")

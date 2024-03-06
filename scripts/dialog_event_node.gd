@@ -9,7 +9,6 @@ extends DialogGraphNodeBase
 
 func _ready():
 	super._ready()
-	
 	node_resource = node_resource
 
 func _on_dragged(p_from: Vector2, p_to: Vector2):
