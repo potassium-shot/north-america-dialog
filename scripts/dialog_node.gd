@@ -223,16 +223,80 @@ func _on_option_editor_focus_exited(p_index: int):
 	undo_redo.commit_action()
 
 func _on_option_editor_removed(p_index: int):
+	var graph: GraphEdit = get_parent_control() as GraphEdit
+	var option: DialogOption = node_resource.get_option(p_index)
+	var other_connected_node: GraphNode = null
+	
 	var undo_redo: UndoRedo = Root.current_project.undo_redo
+	
 	undo_redo.create_action("Remove Dialog Option")
+	
+	if option.connection_id:
+		other_connected_node = Root.current_project.get_node(option.connection_id).graph_node
+		
+		undo_redo.add_do_method(graph.perform_disconnection.bind(
+			name,
+			p_index,
+			other_connected_node.name,
+			0,
+		))
+	
+	for i in range(p_index + 1, node_resource.option_count):
+		var option_i: DialogOption = node_resource.get_option(i)
+		
+		if option_i.connection_id:
+			var other_connected_node_i: GraphNode =\
+				Root.current_project.get_node(option_i.connection_id).graph_node
+			 
+			undo_redo.add_do_method(graph.perform_disconnection.bind(
+				name,
+				i,
+				other_connected_node_i.name,
+				0,
+			))
+			undo_redo.add_do_method(graph.perform_connection.bind(
+				name,
+				i - 1,
+				other_connected_node_i.name,
+				0,
+			))
 	
 	undo_redo.add_do_method(node_resource.remove_option.bind(p_index))
 	undo_redo.add_do_method(_dialog_node_options_changed)
 	
-	var option: DialogOption = node_resource.get_option(p_index)
 	undo_redo.add_undo_method(node_resource.insert_option.bind(p_index, option))
 	undo_redo.add_undo_method(_dialog_node_options_changed)
 	undo_redo.add_undo_reference(option)
+	
+	# Auto disconnect if there is a connection
+	
+	for i in range(p_index + 1, node_resource.option_count):
+		var option_i: DialogOption = node_resource.get_option(i)
+		
+		if option_i.connection_id:
+			var other_connected_node_i: GraphNode =\
+				Root.current_project.get_node(option_i.connection_id).graph_node
+			
+			undo_redo.add_undo_method(graph.perform_disconnection.bind(
+				name,
+				i - 1,
+				other_connected_node_i.name,
+				0,
+			))
+			undo_redo.add_undo_method(graph.perform_connection.bind(
+				name,
+				i,
+				other_connected_node_i.name,
+				0,
+			))
+	
+	if option.connection_id:
+		undo_redo.add_undo_method(graph.perform_connection.bind(
+			name,
+			p_index,
+			other_connected_node.name,
+			0,
+		))
 	
 	undo_redo.commit_action()
 

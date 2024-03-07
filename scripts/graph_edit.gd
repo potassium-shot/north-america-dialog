@@ -270,7 +270,32 @@ func _on_delete_nodes_request(p_nodes: Array[StringName]):
 	for node in p_nodes:
 		remove_node(get_node(NodePath(node)))
 
-func _on_connection_request(p_from_node: StringName, p_from_port: int, p_to_node: StringName, p_to_port: int):
+func _on_connection_request(
+	p_from_node: StringName,
+	p_from_port: int,
+	p_to_node: StringName,
+	p_to_port: int,
+):
+	var undo_redo: UndoRedo = Root.current_project.undo_redo
+	
+	undo_redo.create_action("Connect Nodes")
+	
+	undo_redo.add_do_method(
+		perform_connection.bind(p_from_node, p_from_port, p_to_node, p_to_port)
+	)
+	
+	undo_redo.add_undo_method(
+		perform_disconnection.bind(p_from_node, p_from_port, p_to_node, p_to_port)
+	)
+	
+	undo_redo.commit_action()
+
+func perform_connection(
+	p_from_node: StringName,
+	p_from_port: int,
+	p_to_node: StringName,
+	p_to_port: int,
+):
 	var from_node: GraphNode = get_node(NodePath(p_from_node))
 	var to_node: GraphNode = get_node(NodePath(p_to_node))
 	
@@ -338,13 +363,32 @@ func _on_connection_request(p_from_node: StringName, p_from_port: int, p_to_node
 		p_to_node,
 		p_to_port,
 	)
-	Root.mark_modified()
 
 func _on_disconnection_request(
 	p_from_node: StringName,
 	p_from_port: int,
 	p_to_node: StringName,
-	p_to_port: int
+	p_to_port: int,
+):
+	var undo_redo: UndoRedo = Root.current_project.undo_redo
+	
+	undo_redo.create_action("Disonnect Nodes")
+	
+	undo_redo.add_do_method(
+		perform_disconnection.bind(p_from_node, p_from_port, p_to_node, p_to_port)
+	)
+	
+	undo_redo.add_undo_method(
+		perform_connection.bind(p_from_node, p_from_port, p_to_node, p_to_port)
+	)
+	
+	undo_redo.commit_action()
+
+func perform_disconnection(
+	p_from_node: StringName,
+	p_from_port: int,
+	p_to_node: StringName,
+	p_to_port: int,
 ):
 	var from_node: GraphNode = get_node(NodePath(p_from_node))
 	var to_node: GraphNode = get_node(NodePath(p_to_node))
@@ -367,7 +411,6 @@ func _on_disconnection_request(
 		p_to_node,
 		p_to_port,
 	)
-	Root.mark_modified()
 
 func _get_mouse_position_offset() -> Vector2:
 	return (scroll_offset + get_local_mouse_position()) / zoom

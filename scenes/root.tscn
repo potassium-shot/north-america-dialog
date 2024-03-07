@@ -555,7 +555,6 @@ text = "Cancel"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-scroll_offset = Vector2(0, -4)
 right_disconnects = true
 show_zoom_label = true
 script = ExtResource("1_yctpn")
